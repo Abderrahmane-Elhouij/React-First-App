@@ -1,0 +1,276 @@
+Formulaire.jsx:
+import React, { useState } from "react";
+import axios from "axios";
+
+const Formulaire = () => {
+  const [file, setFile] = useState("");
+  const [stagiaire, setStagiaire] = useState({
+    nom: null,
+    prenom: null,
+    image: null,
+  });
+
+  const sendInfos = (e) => {
+    e.preventDefault();
+    const AjouteToDb = async () => {
+      const formDataString =
+        "nom=" +
+        stagiaire.nom +
+        "&prenom=" +
+        stagiaire.prenom +
+        "&image=/pics/" +
+        file;
+      await axios.post("http://localhost:3000/api/stagiaire", formDataString, {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      });
+    };
+    AjouteToDb();
+    setStagiaire({ ...stagiaire, image: null });
+  };
+
+  function convertFile(files) {
+    if (files) {
+      setFile(files[0].name);
+      const reader = new FileReader();
+      reader.readAsBinaryString(files[0]);
+      reader.onload = (ev) => {
+        setStagiaire({
+          ...stagiaire,
+          image: `data:${files[0].type};base64,${btoa(ev.target.result)}`,
+        });
+      };
+    }
+  }
+
+  return (
+    <div className="container mt-5">
+      <h1 className="mb-4">Ajouter des stagiaires :</h1>
+      <form onSubmit={(e) => sendInfos(e)}>
+        <div className="mb-3">
+          <label htmlFor="nom" className="form-label">
+            Nom :
+          </label>
+          <input
+            type="text"
+            className="form-control"
+            id="nom"
+            onChange={(nom) => {
+              setStagiaire({ ...stagiaire, nom: nom.target.value });
+            }}
+          />
+        </div>
+        <div className="mb-3">
+          <label htmlFor="prenom" className="form-label">
+            Prenom :
+          </label>
+          <input
+            type="text"
+            className="form-control"
+            id="prenom"
+            onChange={(prenom) => {
+              setStagiaire({ ...stagiaire, prenom: prenom.target.value });
+            }}
+          />
+        </div>
+        <div className="mb-3">
+          <label htmlFor="image" className="form-label">
+            Image :
+          </label>
+          <input
+            type="file"
+            className="form-control"
+            id="image"
+            accept="image/*"
+            onChange={(i) => convertFile(i.target.files)}
+          />
+        </div>
+        {stagiaire.image && (
+          <img
+            src={stagiaire.image}
+            alt={`Profile de ${stagiaire.nom}`}
+            className="img-thumbnail"
+            width={150}
+            height={150}
+          />
+        )}
+        <div className="mt-3">
+          <button type="submit" className="btn btn-primary me-2">
+            Ajouter
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
+export default Formulaire;
+
+ListStg.jsx:
+import axios from "axios";
+import React, { useState, useEffect } from "react";
+
+const ListStgs = () => {
+  const [data, setData] = useState([]);
+  useEffect(() => {
+    const getData = async () => {
+      await axios
+        .get("http://localhost:3000/api/stagiaire")
+        .then((res) => {
+          setData(res.data);
+        })
+        .catch((err) => console.log(err));
+    };
+    getData();
+  }, []);
+  return (
+    <div>
+      <h1>List des stagiaires :</h1>
+      <table>
+        <tr>
+          <th>Nom</th>
+          <th>Prenom</th>
+          <th>Image</th>
+        </tr>
+        {data.map((e, i) => (
+          <tr key={i}>
+            <td>{e.nom}</td>
+            <td>{e.prenom}</td>
+            <td>
+              <img src={e.image} alt={e.nom} width={90} height={90} />
+            </td>
+          </tr>
+        ))}
+      </table>
+    </div>
+  );
+};
+
+export default ListStgs;
+
+Youtube.jsx:
+import React, { useState } from "react";
+import axios from "axios";
+
+const Youtube = () => {
+  const [miniature, setMiniature] = useState("/youtube/miniature.png");
+  const [datePub, setDatePub] = useState("xxxxxxx");
+  const [titre, setTitre] = useState("Titre de la vidéo");
+  const [profile, setProfile] = useState("/youtube/profile.png");
+  const [nomChaine, setNomChaine] = useState("Nom de la chaine");
+  const [abonnes, setAbonnes] = useState("XX");
+  const [vues, setVues] = useState("XX");
+  const [likes, setLikes] = useState("XX");
+  const [commentaire, setCommentaire] = useState("XX");
+  const sendUrl = (e) => {
+    e.preventDefault();
+    function getYoutubeVideoId(url) {
+      let pattern = /(?:\?v=|\/embed\/|\.be\/)([a-zA-Z0-9_-]{11})/;
+      let matches = url.match(pattern);
+      if (matches && matches.length > 1) {
+        return matches[1];
+      } else {
+        return null;
+      }
+    }
+    let youtubeUrl = document.forms[0].elements[0].value;
+    let videoId = getYoutubeVideoId(youtubeUrl);
+    const getData = async () => {
+      try {
+        const response1 = await axios.request({
+          method: "GET",
+          url: "https://youtube-v31.p.rapidapi.com/videos",
+          params: {
+            part: "contentDetails,snippet,statistics",
+            id: videoId,
+          },
+          headers: {
+            "X-RapidAPI-Key":
+              "53c90aacefmsh3426cfc180c4f4dp14315ejsnc04993688b5d",
+            "X-RapidAPI-Host": "youtube-v31.p.rapidapi.com",
+          },
+        });
+        const response2 = await axios.request({
+          method: "GET",
+          url: "https://youtube-v31.p.rapidapi.com/channels",
+          params: {
+            part: "snippet,statistics",
+            id: response1.data.items[0].snippet.channelId,
+          },
+          headers: {
+            "X-RapidAPI-Key":
+              "53c90aacefmsh3426cfc180c4f4dp14315ejsnc04993688b5d",
+            "X-RapidAPI-Host": "youtube-v31.p.rapidapi.com",
+          },
+        });
+        console.log(response1.data);
+        console.log(response2.data);
+        setMiniature(response1.data.items[0].snippet.thumbnails.medium.url);
+        setDatePub(response1.data.items[0].snippet.publishedAt);
+        setTitre(response1.data.items[0].snippet.localized.title);
+        setProfile(response2.data.items[0].snippet.thumbnails.default.url);
+        setNomChaine(response1.data.items[0].snippet.channelTitle);
+        setAbonnes(response2.data.items[0].statistics.subscriberCount);
+        setVues(response1.data.items[0].statistics.viewCount);
+        setLikes(response1.data.items[0].statistics.likeCount);
+        setCommentaire(response1.data.items[0].statistics.commentCount);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    getData();
+  };
+  return (
+    <>
+      <br />
+      <br />
+      <br />
+      <form onSubmit={(e) => sendUrl(e)}>
+        <label htmlFor="url">
+          <span>
+            <img
+              src="/youtube/youtube.png"
+              alt="youtube icon"
+              width={15}
+              height={15}
+            />
+          </span>
+          &nbsp;Détails Youtube&nbsp;&nbsp;&nbsp;
+        </label>
+        <input type="url" name="url" id="url" style={{ width: "600px" }} />
+      </form>
+      <br />
+      <br />
+      <div>
+        <img src={miniature} alt={"miniature"} />
+        <br />
+        <b>Date de publication ( {datePub} )</b>
+        <h1>{titre}</h1>
+        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          <img
+            src={profile}
+            alt="profile du chaine"
+            width={50}
+            height={50}
+            style={{ borderRadius: "100%" }}
+          />
+          <div>
+            <b>{nomChaine}</b>
+            <br />
+            <b>{abonnes} Abonnés</b>
+          </div>
+          <button>S'abonner</button>
+        </div>
+        <h1>Statistiques</h1>
+        <b>Vues : {vues}</b>
+        <br />
+        <b>Likes : {likes}</b>
+        <br />
+        <b>Commentaires : {commentaire}</b>
+      </div>
+    </>
+  );
+};
+
+export default Youtube;

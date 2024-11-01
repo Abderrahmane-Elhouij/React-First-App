@@ -1,0 +1,16 @@
+{
+  "blogs": [
+    {
+      "title": "My first blog",
+      "body": "lorem ipsum dolor sit amet, consectetur adipiscing",
+      "author": "David",
+      "id": 1
+    },
+    {
+      "title": "Fitness journey",
+      "body": "lorem ipsum dolor sit amet, consectetur adipiscing elit",
+      "author": "Jonatan",
+      "id": 2
+    }
+  ]
+}
